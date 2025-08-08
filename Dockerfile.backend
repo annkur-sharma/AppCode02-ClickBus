@@ -1,0 +1,33 @@
+# Backend Node.js Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies for Azure Service Bus
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY src/worker/ ./src/worker/
+COPY src/shared/ ./src/shared/
+
+# Install additional dependencies for backend
+RUN npm install @azure/service-bus express cors dotenv
+
+# Create logs directory and shared volume
+RUN mkdir -p /app/shared/logs
+
+# Expose port 8787 (Cloudflare Worker default)
+EXPOSE 8787
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=8787
+
+# Start the backend server
+CMD ["node", "src/worker/index.js"]

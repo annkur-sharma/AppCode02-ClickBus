@@ -1,0 +1,46 @@
+services:
+  clickbus-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: clickbus-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - clickbus-backend
+    volumes:
+      - shared-logs:/app/shared/logs:ro
+    networks:
+      - clickbus-network
+    environment:
+      - NODE_ENV=production
+
+  clickbus-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: clickbus-backend
+    ports:
+      - "8787:8787"
+    volumes:
+      - shared-logs:/app/shared/logs
+    networks:
+      - clickbus-network
+    environment:
+      - NODE_ENV=production
+      - PORT=8787
+      - POD_NAME=clickbus-backend
+      # Azure Service Bus Configuration (use string secrets directly)
+      - AZURE_SERVICE_BUS_CONNECTION_STRING
+      - AZURE_SERVICE_BUS_QUEUE_NAME
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  shared-logs:
+    driver: local
+
+networks:
+  clickbus-network:
+    driver: bridge
