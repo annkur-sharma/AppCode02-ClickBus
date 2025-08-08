@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickbus-frontend
+  namespace: clickbus
+  labels:
+    app: clickbus-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: clickbus-frontend
+  template:
+    metadata:
+      labels:
+        app: clickbus-frontend
+    spec:
+      containers:
+      - name: clickbus-frontend
+        image: clickbus-frontend:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/shared/logs
+          readOnly: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: clickbus-logs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickbus-frontend
+  namespace: clickbus
+  labels:
+    app: clickbus-frontend
+spec:
+  selector:
+    app: clickbus-frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickbus-config
+  namespace: clickbus
+data:
+  AZURE_SERVICE_BUS_QUEUE_NAME: "clickbus-queue"
+  NODE_ENV: "production"
+  PORT: "8787"
+  LOG_LEVEL: "info"

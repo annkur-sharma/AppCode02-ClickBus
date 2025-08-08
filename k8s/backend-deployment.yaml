@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickbus-backend
+  namespace: clickbus
+  labels:
+    app: clickbus-backend
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: clickbus-backend
+  template:
+    metadata:
+      labels:
+        app: clickbus-backend
+    spec:
+      containers:
+      - name: clickbus-backend
+        image: clickbus-backend:latest
+        ports:
+        - containerPort: 8787
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: clickbus-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: clickbus-config
+              key: PORT
+        - name: AZURE_SERVICE_BUS_QUEUE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: clickbus-config
+              key: AZURE_SERVICE_BUS_QUEUE_NAME
+        - name: AZURE_SERVICE_BUS_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: clickbus-secrets
+              key: AZURE_SERVICE_BUS_CONNECTION_STRING
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/shared/logs
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8787
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8787
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: clickbus-logs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickbus-backend
+  namespace: clickbus
+  labels:
+    app: clickbus-backend
+spec:
+  selector:
+    app: clickbus-backend
+  ports:
+  - protocol: TCP
+    port: 8787
+    targetPort: 8787
+  type: ClusterIP

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: clickbus-logs-pv
+  namespace: clickbus
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: clickbus-logs
+  hostPath:
+    path: /tmp/clickbus-logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickbus-logs-pvc
+  namespace: clickbus
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: clickbus-logs
